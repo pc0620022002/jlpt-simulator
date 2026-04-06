@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JLPT æ¨¡æ¬è©¦é¡ç³»çµ± N1/N2/N3</title>
+<style>
+:root {
+  --bg:#f4f5f7; --card:#fff; --border:#e0e4ea;
+  --text:#1a2233; --muted:#6b7a99;
+  --correct:#16a34a; --wrong:#dc2626;
+  --shadow:0 2px 16px rgba(0,0,0,0.07);
+  --n3:#27ae60; --n2:#2980b9; --n1:#8e44ad;
+  --accent:#e74c3c;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* HEADER */
+.hdr{
+  position:sticky;top:0;z-index:200;
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:0 20px;
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 1px 8px rgba(0,0,0,0.06);
+}
+.hdr-left{display:flex;align-items:center;gap:12px;}
+.hdr-logo{font-weight:900;font-size:1.1rem;letter-spacing:1px;color:var(--text);}
+.hdr-badge{padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;color:#fff;}
+.hdr-right{display:flex;align-items:center;gap:10px;}
+.btn-hdr{
+  padding:6px 14px;border-radius:8px;font-size:0.82rem;font-weight:700;
+  cursor:pointer;border:none;transition:all .15s;
+}
+.btn-wrong{background:#fef2f2;color:var(--wrong);border:1.5px solid #fca5a5;}
+.btn-wrong:hover{background:var(--wrong);color:#fff;}
+.btn-home{background:var(--bg);color:var(--muted);border:1.5px solid var(--border);}
+.btn-home:hover{background:var(--border);color:var(--text);}
