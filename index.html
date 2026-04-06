@@ -849,13 +849,27 @@ const JLPT_VOCAB_BANK = {
 // Helper: pick N random items from an array
 function pickRandom(arr, n){ return [...arr].sort(()=>Math.random()-0.5).slice(0, Math.min(n, arr.length)); }
 
+function buildReadingPrompt(level, count){
+  var themes = ['科学技術と社会','教育と子ども','仕事と働き方','環境と自然','食文化と健康','旅行と異文化理解','メディアとコミュニケーション','都市と地方の暮らし','歴史と伝統','スポーツと健康','経済とビジネス','芸術と表現'];
+  var selectedThemes = pickRandom(themes, 2);
+  var passageCount = Math.max(2, Math.floor(count / 2));
+  var levelDesc = level==='N1' ? '高度な論説文・評論文・抽象的な議論。語彙や文法は'+level+'レベル。文章は200〜300字程度。' :
+                  level==='N2' ? '新聞記事・エッセイ・説明文。やや複雑な構成。語彙や文法は'+level+'レベル。文章は150〜250字程度。' :
+                  '日常的なテーマの説明文・エッセイ。平易な構成。語彙や文法は'+level+'レベル。文章は100〜200字程度。';
+
+  return 'あなたはJLPT日本語能力試験の読解問題の出題専門家です。'+level+'レベルの読解問題を作成してください。\n\nセッションID: '+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'（毎回異なる問題を生成するための識別子）\n\n【レベル】'+level+'\n【文章の特徴】'+levelDesc+'\n【テーマ】'+selectedThemes.join('、')+'\n\n【条件】\n- '+passageCount+'つの異なるテーマの文章（passage）を作成し、各文章に2問ずつ出題してください（合計'+(passageCount*2)+'問）\n- 各文章は自然な日本語で、'+level+'レベルの受験者が読める内容にしてください\n- 問題は「内容理解」「筆者の意見」「指示語の指す内容」「理由の理解」などバリエーションをつけてください\n- 選択肢は4つ、正解は1つ\n- 各選択肢に詳しい解説をつけてください（✅ 正解 / ❌ 不正解で始める）\n- ⚠️ 毎回完全に異なるテーマ・内容の文章を生成してください\n\n【回答形式】\n以下のJSON配列のみを返してください。1つの文章に対する最初の問題にはpassageオブジェクトを含め、2問目にはusePrevPassage:trueを設定してください。\n```json\n[\n  {\n    "type": "短文読解",\n    "passage": {\n      "title": "【文章】",\n      "text": "ここに文章本文を入れる"\n    },\n    "text": "この文章で筆者が最も言いたいことは何ですか。",\n    "options": ["選択肢A", "選択肢B", "選択肢C", "選択肢D"],\n    "answer": 0,\n    "optionExplanations": [\n      "✅ 正解。理由...",\n      "❌ 理由...",\n      "❌ 理由...",\n      "❌ 理由..."\n    ]\n  },\n  {\n    "type": "短文読解",\n    "usePrevPassage": true,\n    "text": "同じ文章についての2問目",\n    "options": ["選択肢A", "選択肢B", "選択肢C", "選択肢D"],\n    "answer": 1,\n    "optionExplanations": [\n      "❌ 理由...",\n      "✅ 正解。理由...",\n      "❌ 理由...",\n      "❌ 理由..."\n    ]\n  }\n]\n```\n\n合計'+(passageCount*2)+'問（'+passageCount+'文章 × 2問）を生成してください。JSONのみ返してください。';
+}
+
 function buildAIPrompt(level, sectionName, count){
   const bank = JLPT_VOCAB_BANK[level];
   if(!bank) return null;
 
   const isVocab = sectionName === '文字・語彙';
   const isGrammar = sectionName === '文法';
-  if(!isVocab && !isGrammar) return null;
+  const isReading = sectionName === '読解';
+  if(!isVocab && !isGrammar && !isReading) return null;
+
+  if(isReading) return buildReadingPrompt(level, count);
 
   const typeMap = {
     '文字・語彙': ['漢字の読み','語彙（文脈）','語彙の意味'],
@@ -886,7 +900,7 @@ function buildAIPrompt(level, sectionName, count){
 }
 
 // Call Claude API
-async function callClaudeAPI(prompt){
+async function callClaudeAPI(prompt, needMoreTokens){
   const apiKey = getApiKey();
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method:'POST',
@@ -898,7 +912,7 @@ async function callClaudeAPI(prompt){
     },
     body: JSON.stringify({
       model:'claude-opus-4-6',
-      max_tokens:4096,
+      max_tokens: needMoreTokens ? 8192 : 4096,
       temperature:1.0,
       messages:[{role:'user', content:prompt}]
     })
@@ -917,19 +931,26 @@ async function callClaudeAPI(prompt){
 
 // Generate questions for a section using AI
 async function generateAIQuestions(level, sectionName, count){
+  const isReading = sectionName === '読解';
   const prompt = buildAIPrompt(level, sectionName, count);
-  if(!prompt) return null; // reading not supported
+  if(!prompt) return null;
 
-  const raw = await callClaudeAPI(prompt);
-  // Assign unique IDs
-  return raw.map((q,i)=>({
-    id: 'ai-'+level+'-'+sectionName[0]+'-'+Date.now()+'-'+i,
-    type: q.type||sectionName,
-    text: q.text,
-    options: q.options,
-    answer: q.answer,
-    optionExplanations: q.optionExplanations
-  }));
+  const raw = await callClaudeAPI(prompt, isReading);
+  // Assign unique IDs and preserve reading-specific fields
+  return raw.map((q,i)=>{
+    var result = {
+      id: 'ai-'+level+'-'+sectionName[0]+'-'+Date.now()+'-'+i,
+      type: q.type||sectionName,
+      text: q.text,
+      options: q.options,
+      answer: q.answer,
+      optionExplanations: q.optionExplanations
+    };
+    // Preserve passage data for reading questions
+    if(q.passage) result.passage = q.passage;
+    if(q.usePrevPassage) result.usePrevPassage = true;
+    return result;
+  });
 }
 
 // AI-aware startExam: generate or pick from bank
@@ -947,11 +968,12 @@ async function startWithAI(practiceSectionIdx){
     // Single section practice
     const orig = lv.sections[practiceSectionIdx];
     let qs;
-    if(useAI && !orig.isReading){
+    if(useAI){
+      var aiCount = orig.isReading ? 4 : 6; // reading: 2 passages × 2 questions
       showLoading('AI問題を生成中...', S.level+' '+orig.name+' の新しい問題を作成しています');
       try{
         console.log('[JLPT] Generating AI questions for', S.level, orig.name);
-        qs = await generateAIQuestions(S.level, orig.name, 6);
+        qs = await generateAIQuestions(S.level, orig.name, aiCount);
         console.log('[JLPT] AI generation succeeded, got', qs.length, 'questions');
         S.aiUsed = true;
         hideLoading();
@@ -959,9 +981,13 @@ async function startWithAI(practiceSectionIdx){
         hideLoading();
         console.error('[JLPT] AI generation failed:', e);
         alert('AI問題生成に失敗しました。題庫の問題を使用します。\n\nエラー: '+e.message);
-        const seen=loadSeen();
-        qs=pickQuestions(orig.questions, Math.min(6,orig.questions.length), seen);
-        saveSeen(seen);
+        if(orig.isReading){
+          qs=shuffleSection(orig);
+        } else {
+          const seen=loadSeen();
+          qs=pickQuestions(orig.questions, Math.min(6,orig.questions.length), seen);
+          saveSeen(seen);
+        }
       }
     } else {
       if(!useAI) console.log('[JLPT] No API key — using bank questions');
@@ -985,16 +1011,17 @@ async function startWithAI(practiceSectionIdx){
         const sec=lv.sections[i];
         let qs;
         updateLoadingProgress((i+1)+'/'+lv.sections.length+' セクション生成中...');
-        if(!sec.isReading){
-          try{
-            qs = await generateAIQuestions(S.level, sec.name, 6);
-            anyAI = true;
-          } catch(e){
-            console.error('[JLPT] AI gen failed for section',sec.name,e);
+        try{
+          var aiCount2 = sec.isReading ? 4 : 6;
+          qs = await generateAIQuestions(S.level, sec.name, aiCount2);
+          anyAI = true;
+        } catch(e){
+          console.error('[JLPT] AI gen failed for section',sec.name,e);
+          if(sec.isReading){
+            qs=shuffleSection(sec);
+          } else {
             const seen=loadSeen(); qs=pickQuestions(sec.questions,Math.min(6,sec.questions.length),seen); saveSeen(seen);
           }
-        } else {
-          qs=shuffleSection(sec);
         }
         sections.push({ name:sec.name, pointsEach:sec.pointsEach, isReading:sec.isReading||false, questions:qs, _origIdx:i });
       }
@@ -1293,9 +1320,10 @@ function renderQ(){
   // passage
   if(q.passage && q.passage.text){
     S.passageCache[S.sectionIdx] = q.passage.text;
-    card.innerHTML += `<div class="passage"><div class="passage-title">${q.passage.title}</div>${fmtPassage(q.passage.text)}</div>`;
+    card.innerHTML += `<div class="passage"><div class="passage-title">${escHtml(q.passage.title||'【文章】')}</div>${fmtPassage(q.passage.text)}</div>`;
   } else if(q.usePrevPassage && S.passageCache[S.sectionIdx]){
-    card.innerHTML += `<div class="passage"><div class="passage-title">${q.passage.title}</div>${fmtPassage(S.passageCache[S.sectionIdx])}</div>`;
+    var prevTitle = (q.passage && q.passage.title) ? escHtml(q.passage.title) : '【文章（続き）】';
+    card.innerHTML += `<div class="passage"><div class="passage-title">${prevTitle}</div>${fmtPassage(S.passageCache[S.sectionIdx])}</div>`;
   }
 
   // question text (allow <u> tags for underline, escape everything else)
