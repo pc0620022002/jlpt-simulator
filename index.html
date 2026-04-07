@@ -102,7 +102,6 @@ body{font-family:'Segoe UI','Noto Sans JP',sans-serif;background:var(--bg);color
 }
 .mode-card:hover{transform:translateY(-3px);}
 .mode-card.practice:hover,.mode-card.practice.selected{border-color:#0d9488;background:#f0fdfa;}
-.mode-card.exam:hover,.mode-card.exam.selected{border-color:#dc2626;background:#fef2f2;}
 .mc-icon{font-size:2.5rem;margin-bottom:14px;}
 .mc-title{font-size:1.1rem;font-weight:800;margin-bottom:8px;}
 .mc-desc{color:var(--muted);font-size:.85rem;line-height:1.6;}
@@ -111,7 +110,6 @@ body{font-family:'Segoe UI','Noto Sans JP',sans-serif;background:var(--bg);color
   border-radius:20px;font-size:.78rem;font-weight:700;
 }
 .practice .mc-tag{background:#f0fdfa;color:#0d9488;}
-.exam .mc-tag{background:#fef2f2;color:#dc2626;}
 
 /* ── SECTION SELECTOR (practice mode) ── */
 .sec-select-area{
@@ -165,7 +163,6 @@ body{font-family:'Segoe UI','Noto Sans JP',sans-serif;background:var(--bg);color
   font-size:.75rem;font-weight:700;
 }
 .pill-practice{background:#f0fdfa;color:#0d9488;}
-.pill-exam{background:#fef2f2;color:#dc2626;}
 
 .prog-wrap{margin-bottom:16px;}
 .prog-info{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted);margin-bottom:6px;}
@@ -426,7 +423,7 @@ svg.donut{transform:rotate(-90deg);}
 <div class="page active" id="pg-home">
   <div class="home-title">
     <h1>🎌 JLPT 模擬試驗</h1>
-    <p>日本語能力試験 N1 / N2 / N3 ／ 練習模式・測驗模式</p>
+    <p>日本語能力試験 N1 / N2 / N3 ／ 練習模式</p>
     <div style="margin-top:10px" id="ai-status-home"></div>
   </div>
   <div class="level-grid">
@@ -434,19 +431,16 @@ svg.donut{transform:rotate(-90deg);}
       <div class="lc-badge">N3</div>
       <div class="lc-title">N3 初中級</div>
       <div class="lc-desc">日常的な場面の日本語<br>文字・語彙 / 文法 / 読解</div>
-      <div class="lc-time">⏱ 測驗時間：100分</div>
     </div>
     <div class="level-card n2" onclick="selectLevel('N2')">
       <div class="lc-badge">N2</div>
       <div class="lc-title">N2 中上級</div>
       <div class="lc-desc">日常的・幅広い場面の日本語<br>文字・語彙 / 文法 / 読解</div>
-      <div class="lc-time">⏱ 測驗時間：105分</div>
     </div>
     <div class="level-card n1" onclick="selectLevel('N1')">
       <div class="lc-badge">N1</div>
       <div class="lc-title">N1 上級</div>
       <div class="lc-desc">幅広い場面の高度な日本語<br>文字・語彙 / 文法 / 読解</div>
-      <div class="lc-time">⏱ 測驗時間：110分</div>
     </div>
   </div>
   <div class="wrong-count-home" id="wrong-count-home">
@@ -456,44 +450,11 @@ svg.donut{transform:rotate(-90deg);}
 
 <!-- ═══════════════ MODE SELECT ═══════════════ -->
 <div class="page" id="pg-mode">
-  <div class="mode-header">
-    <h2 id="mode-level-title">N2 — 選擇模式</h2>
-    <p>練習模式：無計時，每題詳細解析 ／ 測驗模式：官方計時，完成後顯示成績</p>
-  </div>
-  <div class="mode-grid">
-    <div class="mode-card practice" id="card-practice" onclick="selectMode('practice')">
-      <div class="mc-icon">📚</div>
-      <div class="mc-title">練習模式</div>
-      <div class="mc-desc">
-        無計時，輕鬆學習。<br>
-        每題作答後立即顯示：<br>
-        ✅ 為什麼這個選項正確<br>
-        ❌ 每個錯誤選項錯在哪
-      </div>
-      <div class="mc-tag">無計時 · 即時解析</div>
-    </div>
-    <div class="mode-card exam" id="card-exam" onclick="selectMode('exam')">
-      <div class="mc-icon">⏱️</div>
-      <div class="mc-title">測驗模式</div>
-      <div class="mc-desc">
-        模擬正式考試環境。<br>
-        依照各級官方時間計時，<br>
-        答完後顯示完整成績與<br>
-        解析，自動記錄錯題。
-      </div>
-      <div class="mc-tag">官方計時 · 結果解析</div>
-    </div>
-  </div>
-  <!-- Practice: section selector (shown when practice is selected) -->
+  <!-- Section selector (practice mode only) -->
   <div class="sec-select-area" id="sec-select-area">
     <div class="sec-select-title">📚 練習したいセクションを選んでください</div>
     <div class="sec-select-grid" id="sec-select-grid"><!-- built by JS --></div>
   </div>
-
-  <!-- Exam: single start button (shown when exam is selected) -->
-  <button class="btn-start-mode" id="btn-start-mode" onclick="startWithAI(null)" style="display:none">
-    ⏱ 測驗開始 ▶
-  </button>
 </div>
 
 <!-- ═══════════════ QUIZ ═══════════════ -->
@@ -535,7 +496,7 @@ svg.donut{transform:rotate(-90deg);}
 <div class="page" id="pg-result">
   <div class="result-card">
     <div class="result-title">試験結果 🎌</div>
-    <div class="result-sub" id="result-sub">N2 測驗模式</div>
+    <div class="result-sub" id="result-sub">N2 練習模式</div>
     <div class="donut-wrap">
       <svg class="donut" width="110" height="110" viewBox="0 0 110 110">
         <circle cx="55" cy="55" r="46" fill="none" stroke="#e5e7eb" stroke-width="11"/>
@@ -584,7 +545,7 @@ svg.donut{transform:rotate(-90deg);}
 <div class="page" id="pg-wrong">
   <div class="wrong-page-header">
     <h2>❌ 錯題本</h2>
-    <p>所有練習・測驗模式中答錯的題目都會自動記錄</p>
+    <p>練習中答錯的題目都會自動記錄</p>
     <button id="btn-back-practice" class="btn btn-secondary" onclick="backFromWrong()" style="display:none;margin-top:10px">← 練習に戻る</button>
   </div>
   <div class="wrong-filter" id="wrong-filter">
@@ -620,6 +581,27 @@ svg.donut{transform:rotate(-90deg);}
       <span class="settings-saved" id="settings-saved">✅ 保存しました</span>
     </div>
     <div id="api-test-result" style="margin-top:8px;font-size:.85rem;display:none"></div>
+  </div>
+  <div class="settings-row">
+    <div class="settings-label">☁️ 錯題本雲端同步（GitHub Gist）</div>
+    <div class="settings-desc">
+      設定 GitHub Token 後，錯題本會自動同步到你的 GitHub Gist。<br>
+      這樣電腦和手機都能共用同一份錯題本。<br>
+      <b>Token 只存在本機瀏覽器，不會傳到其他地方。</b><br>
+      <a href="https://github.com/settings/tokens/new?scopes=gist&description=JLPT%20Simulator%20Sync" target="_blank" style="color:var(--accent)">→ 建立 GitHub Token（只需勾選 gist 權限）</a>
+    </div>
+    <input class="settings-input" id="inp-gh-token" type="password" placeholder="ghp_xxxxxxxxxxxx..." autocomplete="off">
+    <div style="margin-top:8px">
+      <label style="font-size:.82rem;color:var(--muted)">Gist ID（首次同步後自動生成，跨裝置需手動填入）</label>
+      <input class="settings-input" id="inp-gist-id" type="text" placeholder="自動生成或手動貼上" autocomplete="off" style="margin-top:4px">
+    </div>
+    <div class="settings-actions">
+      <button class="btn btn-primary" onclick="saveGhToken()" style="padding:8px 18px;font-size:.85rem">保存</button>
+      <button class="btn btn-primary" onclick="testGistSync()" style="padding:8px 18px;font-size:.85rem;background:#3b82f6">🔄 立即同步</button>
+      <button class="btn-outline" onclick="clearGhToken()" style="padding:8px 18px;font-size:.85rem;cursor:pointer">刪除</button>
+      <span id="sync-status" style="font-size:.82rem;margin-left:8px"></span>
+    </div>
+    <div id="gh-sync-result" style="margin-top:8px;font-size:.85rem;display:none"></div>
   </div>
   <div class="settings-row">
     <div class="settings-label">📊 學習データ管理</div>
@@ -661,13 +643,15 @@ const KEYS = ['①','②','③','④'];
 const LS_KEY = 'jlpt_wrong_v2';
 const LS_SEEN_KEY = 'jlpt_seen_v2';  // tracks seen question IDs for no-repeat
 const LS_API_KEY = 'jlpt_api_key';
+const LS_GH_TOKEN = 'jlpt_gh_token';
+const LS_GIST_ID = 'jlpt_gist_id';
+const GIST_FILENAME = 'jlpt_wrong_answers.json';
 
 // ══════════════════════════════════════════
 // AI QUESTION GENERATION
 // ══════════════════════════════════════════
 function getApiKey(){ return (localStorage.getItem(LS_API_KEY)||'').trim(); }
 function hasApiKey(){ return getApiKey().length > 10; }
-function goSettings(){ showPage('pg-settings'); document.getElementById('btn-home-hdr').style.display='block'; const k=getApiKey(); document.getElementById('inp-api-key').value=k; }
 function saveApiKey(){
   const v=document.getElementById('inp-api-key').value.trim();
   if(v) localStorage.setItem(LS_API_KEY,v); else localStorage.removeItem(LS_API_KEY);
@@ -676,6 +660,55 @@ function saveApiKey(){
 }
 function clearApiKey(){ localStorage.removeItem(LS_API_KEY); document.getElementById('inp-api-key').value=''; updateAIStatusUI(); const el=document.getElementById('settings-saved'); el.textContent='✅ 削除しました'; el.classList.add('show'); setTimeout(()=>{el.classList.remove('show');el.textContent='✅ 保存しました';},2000); }
 function clearSeenData(){ localStorage.removeItem(LS_SEEN_KEY); alert('出題履歴をリセットしました。'); }
+
+// GitHub Token management
+function goSettings(){
+  showPage('pg-settings');
+  document.getElementById('btn-home-hdr').style.display='block';
+  var k=getApiKey(); document.getElementById('inp-api-key').value=k;
+  document.getElementById('inp-gh-token').value=getGhToken();
+  document.getElementById('inp-gist-id').value=getGistId();
+}
+function saveGhToken(){
+  var token = document.getElementById('inp-gh-token').value.trim();
+  var gistId = document.getElementById('inp-gist-id').value.trim();
+  if(token) localStorage.setItem(LS_GH_TOKEN, token); else localStorage.removeItem(LS_GH_TOKEN);
+  if(gistId) localStorage.setItem(LS_GIST_ID, gistId); else localStorage.removeItem(LS_GIST_ID);
+  var el = document.getElementById('sync-status');
+  el.textContent = '✅ 已保存'; el.style.color = '#16a34a';
+  setTimeout(function(){ el.textContent=''; }, 2000);
+}
+function clearGhToken(){
+  localStorage.removeItem(LS_GH_TOKEN); localStorage.removeItem(LS_GIST_ID);
+  document.getElementById('inp-gh-token').value='';
+  document.getElementById('inp-gist-id').value='';
+  var el = document.getElementById('sync-status');
+  el.textContent = '✅ 已刪除'; el.style.color = '#6b7a99';
+  setTimeout(function(){ el.textContent=''; }, 2000);
+}
+async function testGistSync(){
+  var el = document.getElementById('gh-sync-result');
+  el.style.display='block'; el.style.color='#3b82f6'; el.textContent='同步中...';
+  try {
+    var token = document.getElementById('inp-gh-token').value.trim();
+    var gistId = document.getElementById('inp-gist-id').value.trim();
+    if(token) localStorage.setItem(LS_GH_TOKEN, token);
+    if(gistId) localStorage.setItem(LS_GIST_ID, gistId);
+    if(!token){ el.style.color='#dc2626'; el.textContent='請先填入 GitHub Token'; return; }
+    var arr = loadWrong();
+    await _doSyncToGist(arr);
+    // Update gist ID display if newly created
+    var newGistId = getGistId();
+    if(newGistId) document.getElementById('inp-gist-id').value = newGistId;
+    // Try pulling
+    await mergeFromGist();
+    el.style.color='#16a34a';
+    el.textContent='✅ 同步成功！Gist ID: ' + getGistId() + '（在另一台裝置貼上此 ID 即可同步）';
+  } catch(e){
+    el.style.color='#dc2626';
+    el.textContent='❌ 同步失敗: ' + e.message;
+  }
+}
 async function testApiKey(){
   const el=document.getElementById('api-test-result');
   el.style.display='block';
@@ -850,6 +883,7 @@ const JLPT_VOCAB_BANK = {
 function pickRandom(arr, n){ return [...arr].sort(()=>Math.random()-0.5).slice(0, Math.min(n, arr.length)); }
 
 function buildReadingPrompt(level, count){
+  console.log('[DEBUG] buildReadingPrompt called with level:', level, 'count:', count);
   var themes = ['科学技術と社会','教育と子ども','仕事と働き方','環境と自然','食文化と健康','旅行と異文化理解','メディアとコミュニケーション','都市と地方の暮らし','歴史と伝統','スポーツと健康','経済とビジネス','芸術と表現'];
   var selectedThemes = pickRandom(themes, 2);
   var passageCount = Math.max(2, Math.floor(count / 2));
@@ -867,9 +901,13 @@ function buildAIPrompt(level, sectionName, count){
   const isVocab = sectionName === '文字・語彙';
   const isGrammar = sectionName === '文法';
   const isReading = sectionName === '読解';
+  console.log('[DEBUG] buildAIPrompt checking section:', sectionName, '— isVocab:', isVocab, 'isGrammar:', isGrammar, 'isReading:', isReading);
   if(!isVocab && !isGrammar && !isReading) return null;
 
-  if(isReading) return buildReadingPrompt(level, count);
+  if(isReading) {
+    console.log('[DEBUG] Section is reading comprehension, calling buildReadingPrompt');
+    return buildReadingPrompt(level, count);
+  }
 
   const typeMap = {
     '文字・語彙': ['漢字の読み','語彙（文脈）','語彙の意味'],
@@ -931,8 +969,11 @@ async function callClaudeAPI(prompt, needMoreTokens){
 
 // Generate questions for a section using AI
 async function generateAIQuestions(level, sectionName, count){
+  console.log('[DEBUG] generateAIQuestions called with level:', level, 'sectionName:', sectionName, 'count:', count);
   const isReading = sectionName === '読解';
+  console.log('[DEBUG] isReading flag:', isReading);
   const prompt = buildAIPrompt(level, sectionName, count);
+  console.log('[DEBUG] buildAIPrompt returned:', prompt ? 'prompt string' : 'null/undefined');
   if(!prompt) return null;
 
   const raw = await callClaudeAPI(prompt, isReading);
@@ -1042,10 +1083,6 @@ async function startWithAI(practiceSectionIdx){
 
   showPage('pg-quiz');
   document.getElementById('btn-home-hdr').style.display='block';
-  if(S.mode==='exam'){
-    S.timeLeft=lv.examMinutes*60;
-    startTimer();
-  }
   renderQ();
 }
 
@@ -1078,7 +1115,100 @@ function pickQuestions(arr, n, seenSet){
 
 // localStorage helpers
 function loadWrong(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'[]'); }catch(e){ return []; } }
-function saveWrong(arr){ try{ localStorage.setItem(LS_KEY,JSON.stringify(arr)); }catch(e){} }
+function saveWrong(arr){ try{ localStorage.setItem(LS_KEY,JSON.stringify(arr)); syncToGist(arr); }catch(e){} }
+
+// ── GitHub Gist Cloud Sync ──
+function getGhToken(){ return (localStorage.getItem(LS_GH_TOKEN)||'').trim(); }
+function getGistId(){ return (localStorage.getItem(LS_GIST_ID)||'').trim(); }
+
+var _syncTimer = null;
+function syncToGist(arr){
+  if(!getGhToken()) return;
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(function(){ _doSyncToGist(arr); }, 2000);
+}
+
+async function _doSyncToGist(arr){
+  var token = getGhToken();
+  if(!token) return;
+  var gistId = getGistId();
+  var body = { files: {} };
+  body.files[GIST_FILENAME] = { content: JSON.stringify(arr, null, 2) };
+  try {
+    if(gistId){
+      await fetch('https://api.github.com/gists/'+gistId, {
+        method:'PATCH', headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+    } else {
+      body.description = 'JLPT Simulator - Wrong Answers Sync';
+      body.public = false;
+      var resp = await fetch('https://api.github.com/gists', {
+        method:'POST', headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      var data = await resp.json();
+      if(data.id){ localStorage.setItem(LS_GIST_ID, data.id); }
+    }
+    console.log('[JLPT] Synced wrong answers to Gist');
+    updateSyncStatusUI('synced');
+  } catch(e){
+    console.error('[JLPT] Gist sync failed:', e);
+    updateSyncStatusUI('error');
+  }
+}
+
+async function pullFromGist(){
+  var token = getGhToken();
+  var gistId = getGistId();
+  if(!token || !gistId) return null;
+  try {
+    var resp = await fetch('https://api.github.com/gists/'+gistId, {
+      headers:{'Authorization':'token '+token}
+    });
+    var data = await resp.json();
+    if(data.files && data.files[GIST_FILENAME]){
+      var remote = JSON.parse(data.files[GIST_FILENAME].content);
+      return remote;
+    }
+  } catch(e){ console.error('[JLPT] Gist pull failed:', e); }
+  return null;
+}
+
+async function mergeFromGist(){
+  var remote = await pullFromGist();
+  if(!remote) return;
+  var local = loadWrong();
+  var localIds = new Set(local.map(function(x){ return x.id; }));
+  var merged = local.slice();
+  var added = 0;
+  remote.forEach(function(item){
+    if(!localIds.has(item.id)){ merged.push(item); added++; }
+  });
+  if(added > 0){
+    localStorage.setItem(LS_KEY, JSON.stringify(merged));
+    console.log('[JLPT] Merged '+added+' items from Gist');
+  }
+  // Also push merged version back
+  syncToGist(merged);
+  updateWrongCountUI();
+  return merged;
+}
+
+function updateSyncStatusUI(status){
+  var el = document.getElementById('sync-status');
+  if(!el) return;
+  if(status==='synced'){ el.textContent='☁️ 已同步'; el.style.color='#16a34a'; }
+  else if(status==='error'){ el.textContent='⚠️ 同步失敗'; el.style.color='#dc2626'; }
+  else { el.textContent=''; }
+}
+
+// Auto-sync on page load
+setTimeout(function(){
+  if(getGhToken() && getGistId()){
+    mergeFromGist().then(function(){ updateWrongCountUI(); });
+  }
+}, 1500);
 
 // ══════════════════════════════════════════
 // PAGE NAV
@@ -1130,17 +1260,36 @@ updateWrongCountUI();
 
 function selectLevel(lv){
   S.level = lv;
-  S.mode = null;
-  document.getElementById('mode-level-title').textContent = lv + ' — 選擇模式';
-  document.getElementById('card-practice').classList.remove('selected');
-  document.getElementById('card-exam').classList.remove('selected');
-  document.getElementById('btn-start-mode').disabled = true;
-  document.getElementById('btn-start-mode').textContent = '選擇模式後開始 ▶';
+  S.mode = 'practice';
   const badge = document.getElementById('hdr-badge');
   badge.textContent = lv;
   badge.style.background = QUESTION_BANK[lv].color;
   badge.style.display = 'block';
   document.getElementById('btn-home-hdr').style.display = 'block';
+  showPracticeSections(lv);
+}
+
+// Show practice section selector after level is selected
+function showPracticeSections(lv){
+  const levelData = QUESTION_BANK[lv];
+  const grid = document.getElementById('sec-select-grid');
+  grid.innerHTML='';
+  levelData.sections.forEach((sec,i)=>{
+    const card=document.createElement('div');
+    card.className='sec-card';
+    const displayCount = sec.isReading ? sec.questions.length : Math.min(6, sec.questions.length);
+    card.innerHTML=`
+      <div class="sec-card-icon">${ICONS[i]}</div>
+      <div class="sec-card-name">${sec.name}</div>
+      <div class="sec-card-count">${displayCount}問 × ${sec.pointsEach}点<span style="font-size:.75em;opacity:.7;display:block">${!sec.isReading&&sec.questions.length>6?'('+sec.questions.length+'問から毎回ランダム選択)':''}</span></div>
+      <div class="sec-card-start">開始 ▶</div>`;
+    card.style.borderColor=levelData.color;
+    card.addEventListener('mouseenter',()=>{ card.style.background=levelData.color+'18'; });
+    card.addEventListener('mouseleave',()=>{ card.style.background=''; });
+    card.onclick=()=>startWithAI(i);
+    grid.appendChild(card);
+  });
+  document.getElementById('sec-select-area').classList.add('show');
   showPage('pg-mode');
 }
 
@@ -1167,45 +1316,12 @@ function shuffleSection(sec){
   return shuffle(sec.questions);
 }
 
-function selectMode(m){
-  S.mode = m;
-  document.getElementById('card-practice').classList.toggle('selected', m==='practice');
-  document.getElementById('card-exam').classList.toggle('selected', m==='exam');
-  const lv = QUESTION_BANK[S.level];
-
-  if(m==='practice'){
-    // Build section selector cards
-    const grid = document.getElementById('sec-select-grid');
-    grid.innerHTML='';
-    lv.sections.forEach((sec,i)=>{
-      const card=document.createElement('div');
-      card.className='sec-card';
-      const displayCount = sec.isReading ? sec.questions.length : Math.min(6, sec.questions.length);
-      card.innerHTML=`
-        <div class="sec-card-icon">${ICONS[i]}</div>
-        <div class="sec-card-name">${sec.name}</div>
-        <div class="sec-card-count">${displayCount}問 × ${sec.pointsEach}点<span style="font-size:.75em;opacity:.7;display:block">${!sec.isReading&&sec.questions.length>6?'('+sec.questions.length+'問から毎回ランダム選択)':''}</span></div>
-        <div class="sec-card-start">開始 ▶</div>`;
-      card.style.borderColor=lv.color;
-      card.addEventListener('mouseenter',()=>{ card.style.background=lv.color+'18'; });
-      card.addEventListener('mouseleave',()=>{ card.style.background=''; });
-      card.onclick=()=>startWithAI(i);
-      grid.appendChild(card);
-    });
-    document.getElementById('sec-select-area').classList.add('show');
-    document.getElementById('btn-start-mode').style.display='none';
-  } else {
-    document.getElementById('sec-select-area').classList.remove('show');
-    const btn=document.getElementById('btn-start-mode');
-    btn.style.display='block';
-    btn.textContent=`⏱ 測驗開始（${lv.examMinutes}分）▶`;
-  }
-}
+// selectMode removed - only practice mode is supported now
 
 // ══════════════════════════════════════════
-// START
+// START EXAM (DEPRECATED - kept for compatibility, use startWithAI instead)
 // ══════════════════════════════════════════
-// practiceSectionIdx: null = exam (all sections), number = practice single section
+// This function is deprecated. Use startWithAI for all quiz starts.
 function startExam(practiceSectionIdx){
   const lv = QUESTION_BANK[S.level];
   S.sectionIdx=0; S.qIdx=0;
@@ -1251,10 +1367,6 @@ function startExam(practiceSectionIdx){
 
   showPage('pg-quiz');
   document.getElementById('btn-home-hdr').style.display='block';
-  if(S.mode==='exam'){
-    S.timeLeft = lv.examMinutes * 60;
-    startTimer();
-  }
   renderQ();
 }
 
@@ -1292,11 +1404,8 @@ function renderQ(){
   document.getElementById('sec-title-label').textContent = sec.name;
   document.getElementById('sec-sub-label').textContent = '各問題の最も適切な答えを選んでください';
   const pill = document.getElementById('mode-pill');
-  if(S.mode==='practice'){
-    pill.innerHTML='練習モード'+(S.aiUsed?' <span class="ai-badge" style="font-size:.65rem;padding:2px 7px">AI</span>':(!hasApiKey()?' <span style="font-size:.65rem;padding:2px 7px;background:#f3f4f6;color:#6b7280;border-radius:8px">題庫</span>':'')); pill.className='mode-pill pill-practice';
-  } else {
-    pill.innerHTML='測験モード'+(S.aiUsed?' <span class="ai-badge" style="font-size:.65rem;padding:2px 7px">AI</span>':(!hasApiKey()?' <span style="font-size:.65rem;padding:2px 7px;background:#f3f4f6;color:#6b7280;border-radius:8px">題庫</span>':'')); pill.className='mode-pill pill-exam';
-  }
+  pill.innerHTML='練習モード'+(S.aiUsed?' <span class="ai-badge" style="font-size:.65rem;padding:2px 7px">AI</span>':(!hasApiKey()?' <span style="font-size:.65rem;padding:2px 7px;background:#f3f4f6;color:#6b7280;border-radius:8px">題庫</span>':''));
+  pill.className='mode-pill pill-practice';
   // progress bar color
   document.querySelector('.prog-fill').style.background = lv.color;
 
@@ -1414,24 +1523,21 @@ function selectOpt(idx){
       if(i===idx && isCorrect) { el.classList.remove('show-correct'); el.classList.add('correct'); }
       el.onclick = null;
 
-      // Show inline explanation under each option in practice mode
-      if(S.mode==='practice'){
-        var expEl = el.querySelector('.opt-exp');
-        if(expEl){
-          var txt = explanations[i] || (i===q.answer ? '✅ 正解の選択肢です。' : '❌ この選択肢は不正解です。');
-          expEl.textContent = txt;
-          expEl.classList.add('show');
-          expEl.style.display = 'block';
-        }
+      // Show inline explanation under each option (always in practice mode)
+      var expEl = el.querySelector('.opt-exp');
+      if(expEl){
+        var txt = explanations[i] || (i===q.answer ? '✅ 正解の選択肢です。' : '❌ この選択肢は不正解です。');
+        expEl.textContent = txt;
+        expEl.classList.add('show');
+        expEl.style.display = 'block';
       }
     });
   }catch(e){ console.error('[JLPT] selectOpt marking error:', e); }
 
-  // ALWAYS show explanation block in PRACTICE mode using safe DOM methods
+  // ALWAYS show explanation block (practice mode only) using safe DOM methods
   // This block is intentionally independent — even if option marking above fails,
   // the explanation block below MUST still appear.
-  if(S.mode==='practice'){
-    try{
+  try{
       var oldExp = document.getElementById('practice-exp-block');
       if(oldExp) oldExp.remove();
 
@@ -1489,7 +1595,6 @@ function selectOpt(idx){
       setTimeout(function(){ try{ block.scrollIntoView({behavior:'smooth', block:'nearest'}); }catch(e){} }, 100);
       console.log('[JLPT] Explanation block created OK, options:', opts.length, 'explanations:', explanations.length);
     }catch(e){ console.error('[JLPT] selectOpt explanation error:', e); }
-  }
 
   // update score
   if(isCorrect){
@@ -1591,23 +1696,15 @@ function finishExam(){
   document.getElementById('donut-pct').textContent = pct+'%';
   document.getElementById('result-total').textContent = total;
 
-  if(S.isSingleSection){
-    const sec = S.activeSections[0];
-    const secMax = sec.questions.length * sec.pointsEach;
-    document.getElementById('result-sub').textContent = `${S.level} 練習模式 — ${sec.name}`;
-    document.getElementById('result-max').textContent = `/ ${secMax}点（正答率 ${pct}%）`;
-    const vEl = document.getElementById('result-verdict');
-    if(pct>=80) vEl.innerHTML='<span class="v-pass">🎉 よくできました！</span>';
-    else if(pct>=60) vEl.innerHTML='<span class="v-close">💪 もう少し！もう一度チャレンジ</span>';
-    else vEl.innerHTML='<span class="v-fail">📚 復習してから再チャレンジ</span>';
-  } else {
-    document.getElementById('result-sub').textContent = `${S.level} 測驗模式`;
-    document.getElementById('result-max').textContent = `/ ${lv.maxScore}点（合格ライン：${lv.passingScore}点）`;
-    const vEl = document.getElementById('result-verdict');
-    if(total>=lv.passingScore) vEl.innerHTML='<span class="v-pass">🎉 合格圏内！おめでとうございます！</span>';
-    else if(total>=lv.passingScore*0.8) vEl.innerHTML='<span class="v-close">⚠️ 惜しい！もう少しで合格ライン</span>';
-    else vEl.innerHTML='<span class="v-fail">📚 もっと練習が必要です。頑張りましょう！</span>';
-  }
+  // Always practice mode now
+  const sec = S.activeSections[0];
+  const secMax = sec.questions.length * sec.pointsEach;
+  document.getElementById('result-sub').textContent = `${S.level} 練習模式 — ${sec.name}`;
+  document.getElementById('result-max').textContent = `/ ${secMax}点（正答率 ${pct}%）`;
+  const vEl = document.getElementById('result-verdict');
+  if(pct>=80) vEl.innerHTML='<span class="v-pass">🎉 よくできました！</span>';
+  else if(pct>=60) vEl.innerHTML='<span class="v-close">💪 もう少し！もう一度チャレンジ</span>';
+  else vEl.innerHTML='<span class="v-fail">📚 復習してから再チャレンジ</span>';
 
   // section score cells — show played sections, grey out unplayed
   lv.sections.forEach((origSec,i)=>{
@@ -1705,7 +1802,7 @@ function renderWrongList(){
   if(filtered.length===0){
     list.innerHTML=`<div class="empty-state">
       <div class="es-icon">${all.length===0?'🎉':'🔍'}</div>
-      <p>${all.length===0?'還沒有錯題記錄！完成測驗模式後，答錯的題目會自動記錄在這裡。':'沒有符合篩選條件的錯題。'}</p>
+      <p>${all.length===0?'還沒有錯題記錄！練習後，答錯的題目會自動記錄在這裡。':'沒有符合篩選條件的錯題。'}</p>
     </div>`;
     clearBtn.style.display='none';
     return;
