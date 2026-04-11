@@ -147,6 +147,32 @@ body{font-family:'Segoe UI','Noto Sans JP',sans-serif;background:var(--bg);color
   color:#fff;box-shadow:0 4px 14px rgba(192,57,43,.3);
 }
 .btn-start-mode:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(192,57,43,.4);}
+
+/* ── Listening Player ── */
+.listening-player{
+  background:linear-gradient(135deg,#1e40af,#3b82f6);
+  border-radius:14px;padding:20px 18px;margin-bottom:18px;
+  color:#fff;text-align:center;
+}
+.listening-player-title{font-size:.88rem;opacity:.85;margin-bottom:14px;font-weight:700;letter-spacing:.3px;}
+.listening-controls{display:flex;align-items:center;justify-content:center;gap:16px;}
+.btn-listen{
+  background:#fff;color:#1e40af;border:none;border-radius:50%;
+  width:54px;height:54px;font-size:1.4rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 14px rgba(0,0,0,.25);transition:transform .15s;flex-shrink:0;
+}
+.btn-listen:hover{transform:scale(1.08);}
+.listen-info{text-align:left;}
+.listen-status{font-size:.88rem;font-weight:700;}
+.listen-hint-small{font-size:.74rem;opacity:.75;margin-top:3px;}
+.listen-speed{
+  background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);
+  color:#fff;border-radius:8px;padding:5px 10px;font-size:.8rem;cursor:pointer;
+  flex-shrink:0;
+}
+.listen-speed option{color:#000;}
+.listening-repeat-hint{font-size:.75rem;opacity:.7;margin-top:12px;}
 .btn-start-mode:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 
 /* ── QUIZ ── */
@@ -974,6 +1000,197 @@ function buildReadingPrompt(level, count){
   return 'あなたはJLPT日本語能力試験の読解問題の出題専門家です。'+level+'レベルの読解問題を作成してください。\n\nセッションID: '+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'（毎回異なる問題を生成するための識別子）\n\n【レベル】'+level+'\n【文章の特徴】'+levelDesc+'\n【テーマ】'+selectedThemes.join('、')+'\n\n【条件】\n- '+passageCount+'つの異なるテーマの文章（passage）を作成し、各文章に2問ずつ出題してください（合計'+(passageCount*2)+'問）\n- 各文章は自然な日本語で、'+level+'レベルの受験者が読める内容にしてください\n- 問題は「内容理解」「筆者の意見」「指示語の指す内容」「理由の理解」などバリエーションをつけてください\n- 選択肢は4つ、正解は1つ\n- 各選択肢に詳しい解説をつけてください（✅ 正解 / ❌ 不正解で始める）\n- ⚠️ 毎回完全に異なるテーマ・内容の文章を生成してください\n\n【回答形式】\n以下のJSON配列のみを返してください。1つの文章に対する最初の問題にはpassageオブジェクトを含め、2問目にはusePrevPassage:trueを設定してください。\n```json\n[\n  {\n    "type": "短文読解",\n    "passage": {\n      "title": "【文章】",\n      "text": "ここに文章本文を入れる"\n    },\n    "text": "この文章で筆者が最も言いたいことは何ですか。",\n    "options": ["選択肢A", "選択肢B", "選択肢C", "選択肢D"],\n    "answer": 0,\n    "optionExplanations": [\n      "✅ 正解。理由...",\n      "❌ 理由...",\n      "❌ 理由...",\n      "❌ 理由..."\n    ]\n  },\n  {\n    "type": "短文読解",\n    "usePrevPassage": true,\n    "text": "同じ文章についての2問目",\n    "options": ["選択肢A", "選択肢B", "選択肢C", "選択肢D"],\n    "answer": 1,\n    "optionExplanations": [\n      "❌ 理由...",\n      "✅ 正解。理由...",\n      "❌ 理由...",\n      "❌ 理由..."\n    ]\n  }\n]\n```\n\n合計'+(passageCount*2)+'問（'+passageCount+'文章 × 2問）を生成してください。JSONのみ返してください。';
 }
 
+// ══════════════════════════════════════════
+// LISTENING (聴解) FEATURE
+// ══════════════════════════════════════════
+
+function buildListeningPrompt(level){
+  var difficulty = level==='N1'
+    ? '高度な語彙・複雑な文法（N1レベル）。抽象的・専門的なテーマ（経済・社会問題・文化論など）。スクリプトは200〜350文字程度。'
+    : '中上級の語彙・文法（N2レベル）。日常生活・仕事・社会的テーマ。スクリプトは150〜250文字程度。';
+  var scenarios = level==='N1'
+    ? ['会社の会議','ラジオのニュース解説','大学の講義の一部','専門家へのインタビュー','社会問題についての討論']
+    : ['日常会話（友人・同僚）','案内放送（店・駅・病院）','電話での問い合わせ','ニュースの短いレポート','職場での指示や説明'];
+  var scene = scenarios[Math.floor(Math.random()*scenarios.length)];
+  return 'あなたはJLPT '+level+'の聴解問題を作成するエキスパートです。\n\nセッションID: '+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'\n\nシナリオタイプ：'+scene+'\n難易度：'+difficulty+'\n\n以下のJSON形式のみで回答してください（配列ではなくオブジェクト）：\n\n{"title":"シナリオのタイトル（短く）","script":"スクリプト全文（日本語のみ。会話形式なら「男性：〜」「女性：〜」「アナウンサー：〜」のように話者を明記）","questions":[{"text":"質問文","options":["選択肢A","選択肢B","選択肢C","選択肢D"],"answer":0,"explanation":"なぜこの答えが正しいか簡潔に説明"},{"text":"質問文2","options":["選択肢A","選択肢B","選択肢C","選択肢D"],"answer":1,"explanation":"解説"},{"text":"質問文3","options":["選択肢A","選択肢B","選択肢C","選択肢D"],"answer":2,"explanation":"解説"}]}\n\n条件：\n- 質問は内容理解・理由・目的・話者の意図など多様に\n- 4択、answerは0〜3のインデックス\n- JSONのみ返す（マークダウン・説明文不要）';
+}
+
+async function generateListeningQuiz(level){
+  var apiKey = getApiKey();
+  var prompt = buildListeningPrompt(level);
+  var resp = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-opus-4-6',
+      max_tokens:4096,
+      temperature:1.0,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  if(!resp.ok){ var err=await resp.text(); throw new Error('API Error: '+resp.status+' '+err); }
+  var data = await resp.json();
+  var text = data.content[0].text;
+  // Extract JSON object
+  var jsonMatch = text.match(/\{[\s\S]*\}/);
+  if(!jsonMatch) throw new Error('AI応答からJSONを解析できません');
+  return JSON.parse(jsonMatch[0]);
+}
+
+async function startListeningMode(){
+  if(!hasApiKey()){
+    alert('聴解モードにはClaudeのAPIキーが必要です。\n設定ページからAPIキーを入力してください。');
+    return;
+  }
+  showLoading('AI聴解問題を生成中...', S.level+' 聴解シナリオを作成しています');
+  try{
+    var data = await generateListeningQuiz(S.level);
+    hideLoading();
+
+    if(!data.script || !Array.isArray(data.questions) || data.questions.length===0){
+      throw new Error('無効なデータ形式');
+    }
+
+    var qs = data.questions.map(function(q,i){
+      return {
+        id:'listen-'+S.level+'-'+Date.now()+'-'+i,
+        type:'聴解',
+        text:q.text,
+        options:q.options,
+        answer:q.answer,
+        explanation:q.explanation||''
+      };
+    });
+
+    S.sectionIdx=0; S.qIdx=0;
+    S.answers={}; S.totalScore=0; S.passageCache={};
+    S.wrongAnswers=loadWrong();
+    S.aiUsed=true;
+    S.isSingleSection=true;
+
+    S.activeSections=[{
+      name:'聴解',
+      pointsEach:10,
+      isListening:true,
+      listeningScript:data.script,
+      listeningTitle:data.title||'聴解シナリオ',
+      questions:qs,
+      _origIdx:99
+    }];
+    S.secScores=[0];
+
+    // cancel any previous TTS
+    if(window.speechSynthesis) window.speechSynthesis.cancel();
+    window._listenPlaying=false;
+
+    showPage('pg-quiz');
+    document.getElementById('btn-home-hdr').style.display='block';
+    renderQ();
+  } catch(e){
+    hideLoading();
+    console.error('[JLPT] Listening generation failed:',e);
+    alert('聴解問題の生成に失敗しました。\nエラー: '+e.message);
+  }
+}
+
+// TTS helpers
+window._listenPlaying=false;
+
+function secIcon(sec){
+  if(sec.isListening) return '🎧';
+  return ICONS[sec._origIdx]||'📖';
+}
+
+function toggleListenPlay(){
+  if(!window.speechSynthesis) return;
+  var ss=window.speechSynthesis;
+  if(window._listenPlaying){
+    ss.pause();
+    window._listenPlaying=false;
+    var btn=document.getElementById('btn-play-listen');
+    var st=document.getElementById('listen-status');
+    if(btn) btn.textContent='▶';
+    if(st) st.textContent='一時停止中';
+  } else if(ss.paused){
+    ss.resume();
+    window._listenPlaying=true;
+    var btn=document.getElementById('btn-play-listen');
+    var st=document.getElementById('listen-status');
+    if(btn) btn.textContent='⏸';
+    if(st) st.textContent='再生中...';
+  } else {
+    playListeningScript();
+  }
+}
+
+function playListeningScript(){
+  if(!window.speechSynthesis) return;
+  var ss=window.speechSynthesis;
+  ss.cancel();
+  var sec=curSec();
+  if(!sec||!sec.listeningScript) return;
+
+  var spd=1.0;
+  var selEl=document.getElementById('listen-speed');
+  if(selEl) spd=parseFloat(selEl.value)||0.85;
+
+  var utter=new SpeechSynthesisUtterance(sec.listeningScript);
+  utter.lang='ja-JP';
+  utter.rate=spd;
+  utter.pitch=1.0;
+
+  // Try to pick a Japanese voice
+  function doSpeak(){
+    var voices=ss.getVoices();
+    var jaVoice=voices.find(function(v){ return v.lang.startsWith('ja'); });
+    if(jaVoice) utter.voice=jaVoice;
+    window._listenPlaying=true;
+    window._listenEverPlayed=true;
+    var btn=document.getElementById('btn-play-listen');
+    var st=document.getElementById('listen-status');
+    if(btn) btn.textContent='⏸';
+    if(st) st.textContent='再生中...';
+    utter.onend=function(){
+      window._listenPlaying=false;
+      var btn=document.getElementById('btn-play-listen');
+      var st=document.getElementById('listen-status');
+      if(btn) btn.textContent='🔁';
+      if(st) st.textContent='もう一度聞くには 🔁 を押してください';
+    };
+    utter.onerror=function(){
+      window._listenPlaying=false;
+      var btn=document.getElementById('btn-play-listen');
+      var st=document.getElementById('listen-status');
+      if(btn) btn.textContent='▶';
+      if(st) st.textContent='再生エラー。もう一度お試しください。';
+    };
+    ss.speak(utter);
+  }
+
+  // Voices might not be loaded yet
+  var voices=ss.getVoices();
+  if(voices.length>0){
+    doSpeak();
+  } else {
+    ss.onvoiceschanged=function(){ ss.onvoiceschanged=null; doSpeak(); };
+    // Fallback: speak anyway after short delay
+    setTimeout(function(){ if(!window._listenPlaying) doSpeak(); },500);
+  }
+}
+
+function updateListenSpeed(){
+  if(window._listenPlaying){
+    window.speechSynthesis.cancel();
+    window._listenPlaying=false;
+    setTimeout(playListeningScript,100);
+  }
+}
+
 function buildAIPrompt(level, sectionName, count){
   const bank = JLPT_VOCAB_BANK[level];
   if(!bank) return null;
@@ -1303,6 +1520,10 @@ function goHome(){
   document.getElementById('timer').classList.remove('warn');
   document.getElementById('hdr-badge').style.display='none';
   document.getElementById('btn-home-hdr').style.display='none';
+  // Stop TTS if listening mode
+  if(window.speechSynthesis){ window.speechSynthesis.cancel(); }
+  window._listenPlaying=false;
+  window._listenEverPlayed=false;
   updateWrongCountUI();
   showPage('pg-home');
 }
@@ -1369,6 +1590,20 @@ function showPracticeSections(lv){
     card.onclick=()=>startWithAI(i);
     grid.appendChild(card);
   });
+  // ── 聴解カードを追加 ──
+  const listenCard = document.createElement('div');
+  listenCard.className = 'sec-card';
+  listenCard.innerHTML = `
+    <div class="sec-card-icon">🎧</div>
+    <div class="sec-card-name">聴解</div>
+    <div class="sec-card-count">AI生成 × 3問<span style="font-size:.75em;opacity:.7;display:block">毎回新シナリオ</span></div>
+    <div class="sec-card-start">開始 ▶</div>`;
+  listenCard.style.borderColor = levelData.color;
+  listenCard.addEventListener('mouseenter',()=>{ listenCard.style.background = levelData.color+'18'; });
+  listenCard.addEventListener('mouseleave',()=>{ listenCard.style.background = ''; });
+  listenCard.onclick = ()=>startListeningMode();
+  grid.appendChild(listenCard);
+
   document.getElementById('sec-select-area').classList.add('show');
   showPage('pg-mode');
 }
@@ -1480,9 +1715,11 @@ function renderQ(){
   const lv = QUESTION_BANK[S.level];
 
   // section header — use original section index for icon
-  document.getElementById('sec-icon').textContent = ICONS[sec._origIdx];
+  document.getElementById('sec-icon').textContent = secIcon(sec);
   document.getElementById('sec-title-label').textContent = sec.name;
-  document.getElementById('sec-sub-label').textContent = '各問題の最も適切な答えを選んでください';
+  document.getElementById('sec-sub-label').textContent = sec.isListening
+    ? 'スクリプトを聞いて質問に答えてください'
+    : '各問題の最も適切な答えを選んでください';
   const pill = document.getElementById('mode-pill');
   pill.innerHTML='練習モード'+(S.aiUsed?' <span class="ai-badge" style="font-size:.65rem;padding:2px 7px">AI</span>':(!hasApiKey()?' <span style="font-size:.65rem;padding:2px 7px;background:#f3f4f6;color:#6b7280;border-radius:8px">題庫</span>':''));
   pill.className='mode-pill pill-practice';
@@ -1496,6 +1733,34 @@ function renderQ(){
 
   const container = document.getElementById('q-container');
   container.innerHTML = '';
+
+  // ── Listening player (shown on every question in 聴解 section) ──
+  if(sec.isListening && sec.listeningScript){
+    const player = document.createElement('div');
+    player.className = 'listening-player';
+    const isPlaying = window._listenPlaying;
+    const alreadyPlayed = window._listenEverPlayed;
+    player.innerHTML = `
+      <div class="listening-player-title">🎧 ${escHtml(sec.listeningTitle||'聴解シナリオ')}</div>
+      <div class="listening-controls">
+        <button class="btn-listen" id="btn-play-listen" onclick="toggleListenPlay()">
+          ${isPlaying ? '⏸' : (alreadyPlayed ? '🔁' : '▶')}
+        </button>
+        <div class="listen-info">
+          <div class="listen-status" id="listen-status">
+            ${isPlaying ? '再生中...' : (alreadyPlayed ? 'もう一度聞くには 🔁 を押してください' : 'タップして音声を再生')}
+          </div>
+          <div class="listen-hint-small">何度でも再生できます</div>
+        </div>
+        <select class="listen-speed" id="listen-speed" onchange="updateListenSpeed()">
+          <option value="0.7">遅い</option>
+          <option value="0.85" selected>普通</option>
+          <option value="1.0">速い</option>
+        </select>
+      </div>
+      <div class="listening-repeat-hint">※ 音声を聞いてから下の質問に答えてください（問題 ${num}/${total}）</div>`;
+    container.appendChild(player);
+  }
 
   const card = document.createElement('div');
   card.className = 'q-card';
@@ -1732,7 +1997,7 @@ function showSectionTransition(){
   const pct = Math.round(score/max*100);
   const isLastSec = S.sectionIdx === S.activeSections.length-1;
 
-  document.getElementById('trans-icon').textContent = ICONS[sec._origIdx];
+  document.getElementById('trans-icon').textContent = secIcon(sec);
   document.getElementById('trans-title').textContent = sec.name + ' 完了！';
   document.getElementById('trans-score').textContent = `${score} / ${max} 点（正答率 ${pct}%）`;
   document.getElementById('trans-score').style.color = lv.color;
@@ -1832,7 +2097,7 @@ function buildReview(panel){
   S.activeSections.forEach((sec)=>{
     const h = document.createElement('div');
     h.className='review-sec-title';
-    h.textContent=ICONS[sec._origIdx]+' '+sec.name;
+    h.textContent=secIcon(sec)+' '+sec.name;
     panel.appendChild(h);
     sec.questions.forEach(q=>{
       const chosen=S.answers[q.id];
