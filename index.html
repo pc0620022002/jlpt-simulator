@@ -1294,6 +1294,12 @@ async function generateAIQuestions(level, sectionName, count){
 
 // Start practice: generate AI questions or pick from bank
 async function startWithAI(practiceSectionIdx){
+  // Show loading overlay immediately so users get instant feedback after clicking
+  // a section card. Later showLoading calls will refine the message once we know
+  // the specific section / progress. (showLoading reuses the overlay, so calling
+  // it multiple times is cheap and just updates the text.)
+  if(hasApiKey()) showLoading('AI問題を生成中...', 'しばらくお待ちください');
+
   const lv = QUESTION_BANK[S.level];
   S.sectionIdx=0; S.qIdx=0;
   S.answers={}; S.totalScore=0; S.passageCache={};
