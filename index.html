@@ -666,6 +666,8 @@ const LS_API_KEY = 'jlpt_api_key';
 const LS_GH_TOKEN = 'jlpt_gh_token';
 const LS_GIST_ID = 'jlpt_gist_id';
 const GIST_FILENAME = 'jlpt_wrong_answers.json';
+const LS_TOMBSTONE_KEY = 'jlpt_tombstones_v1';  // deleted-item IDs for cross-device delete sync
+const GIST_TOMBSTONE_FILENAME = 'jlpt_tombstones.json';
 
 // ══════════════════════════════════════════
 // AI QUESTION GENERATION
@@ -1420,6 +1422,10 @@ function pickQuestions(arr, n, seenSet){
 // localStorage helpers
 function loadWrong(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'[]'); }catch(e){ return []; } }
 function saveWrong(arr){ try{ localStorage.setItem(LS_KEY,JSON.stringify(arr)); syncToGist(arr); }catch(e){} }
+// Tombstones: IDs of intentionally-deleted wrong answers, so delete propagates across devices
+// instead of being resurrected by the union-merge in mergeFromGist.
+function loadTombstones(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_TOMBSTONE_KEY)||'[]')); }catch(e){ return new Set(); } }
+function saveTombstones(set){ try{ localStorage.setItem(LS_TOMBSTONE_KEY, JSON.stringify([...set])); }catch(e){} }
 
 // ── GitHub Gist Cloud Sync ──
 function getGhToken(){ return (localStorage.getItem(LS_GH_TOKEN)||'').trim(); }
@@ -1438,6 +1444,7 @@ async function _doSyncToGist(arr){
   var gistId = getGistId();
   var body = { files: {} };
   body.files[GIST_FILENAME] = { content: JSON.stringify(arr, null, 2) };
+  body.files[GIST_TOMBSTONE_FILENAME] = { content: JSON.stringify([...loadTombstones()], null, 2) };
   try {
     if(gistId){
       var patchResp = await fetch('https://api.github.com/gists/'+gistId, {
@@ -1475,10 +1482,14 @@ async function pullFromGist(){
     });
     if(!resp.ok){ throw new Error('Gist GET '+resp.status+': '+(await resp.text()).slice(0,200)); }
     var data = await resp.json();
+    var result = { wrongs: null, tombstones: [] };
     if(data.files && data.files[GIST_FILENAME]){
-      var remote = JSON.parse(data.files[GIST_FILENAME].content);
-      return remote;
+      try { result.wrongs = JSON.parse(data.files[GIST_FILENAME].content); } catch(e){}
     }
+    if(data.files && data.files[GIST_TOMBSTONE_FILENAME]){
+      try { result.tombstones = JSON.parse(data.files[GIST_TOMBSTONE_FILENAME].content) || []; } catch(e){}
+    }
+    if(result.wrongs !== null) return result;
   } catch(e){ console.error('[JLPT] Gist pull failed:', e); }
   return null;
 }
@@ -1487,17 +1498,33 @@ async function mergeFromGist(){
   var remote = await pullFromGist();
   if(!remote) return;
   var local = loadWrong();
-  var localIds = new Set(local.map(function(x){ return x.id; }));
-  var merged = local.slice();
+  var localTombs = loadTombstones();
+  var remoteTombs = Array.isArray(remote.tombstones) ? remote.tombstones : [];
+  var remoteWrongs = Array.isArray(remote.wrongs) ? remote.wrongs : [];
+
+  // Union tombstones (local + remote) and persist — delete is a permanent signal
+  var tombsBefore = localTombs.size;
+  remoteTombs.forEach(function(id){ localTombs.add(id); });
+  if(localTombs.size !== tombsBefore) saveTombstones(localTombs);
+
+  // Start with local minus any tombstoned items
+  var merged = local.filter(function(x){ return !localTombs.has(x.id); });
+  var mergedIds = new Set(merged.map(function(x){ return x.id; }));
+
+  // Add remote items that aren't tombstoned and aren't already present
   var added = 0;
-  remote.forEach(function(item){
-    if(!localIds.has(item.id)){ merged.push(item); added++; }
+  remoteWrongs.forEach(function(item){
+    if(!mergedIds.has(item.id) && !localTombs.has(item.id)){
+      merged.push(item);
+      mergedIds.add(item.id);
+      added++;
+    }
   });
-  if(added > 0){
-    localStorage.setItem(LS_KEY, JSON.stringify(merged));
-    console.log('[JLPT] Merged '+added+' items from Gist');
-  }
-  // Also push merged version back
+
+  localStorage.setItem(LS_KEY, JSON.stringify(merged));
+  if(added > 0) console.log('[JLPT] Merged '+added+' items from Gist');
+
+  // Push merged state (wrongs + tombstones) back so the Gist converges
   syncToGist(merged);
   updateWrongCountUI();
   return merged;
@@ -1934,6 +1961,11 @@ function selectOpt(idx){
 
 function recordWrong(q, chosen){
   const existing = loadWrong();
+  // Un-tombstone: if the user previously deleted this question id and is now
+  // answering it wrong again (e.g. a bank question with a stable id), we want
+  // it to reappear in the wrong-answer list rather than being filtered out.
+  const tombs = loadTombstones();
+  if(tombs.has(q.id)){ tombs.delete(q.id); saveTombstones(tombs); }
   // avoid duplicate
   const idx = existing.findIndex(x=>x.id===q.id);
   const entry = {
@@ -2153,13 +2185,20 @@ function renderWrongList(){
   });
 }
 function deleteWrongItem(id){
+  const tombs = loadTombstones();
+  tombs.add(id);
+  saveTombstones(tombs);
   const arr = loadWrong().filter(x=>x.id!==id);
-  saveWrong(arr);
+  saveWrong(arr);  // triggers Gist sync, which now also includes tombstones
   updateWrongCountUI();
   renderWrongList();
 }
 function clearWrong(){
   if(confirm('すべての錯題記録を削除しますか？')){
+    const arr = loadWrong();
+    const tombs = loadTombstones();
+    arr.forEach(function(item){ tombs.add(item.id); });
+    saveTombstones(tombs);
     saveWrong([]);
     updateWrongCountUI();
     renderWrongList();
