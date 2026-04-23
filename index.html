@@ -1291,7 +1291,7 @@ async function generateAIQuestions(level, sectionName, count){
   });
 }
 
-// AI-aware startExam: generate or pick from bank
+// Start practice: generate AI questions or pick from bank
 async function startWithAI(practiceSectionIdx){
   const lv = QUESTION_BANK[S.level];
   S.sectionIdx=0; S.qIdx=0;
@@ -1632,58 +1632,6 @@ function shuffleSection(sec){
 }
 
 // selectMode removed - only practice mode is supported now
-
-// ══════════════════════════════════════════
-// START EXAM (DEPRECATED - kept for compatibility, use startWithAI instead)
-// ══════════════════════════════════════════
-// This function is deprecated. Use startWithAI for all quiz starts.
-function startExam(practiceSectionIdx){
-  const lv = QUESTION_BANK[S.level];
-  S.sectionIdx=0; S.qIdx=0;
-  S.answers={}; S.totalScore=0; S.passageCache={};
-  S.wrongAnswers=loadWrong();
-
-  if(practiceSectionIdx!=null){
-    // Practice: single section, shuffled
-    const orig = lv.sections[practiceSectionIdx];
-    const seen = loadSeen();
-    const qs = orig.isReading
-      ? shuffleSection(orig)  // reading: shuffle all (passage groups kept together)
-      : pickQuestions(orig.questions, Math.min(6, orig.questions.length), seen);
-    saveSeen(seen);
-    S.activeSections = [{
-      name: orig.name,
-      pointsEach: orig.pointsEach,
-      isReading: orig.isReading||false,
-      questions: orig.isReading ? qs : qs,
-      _origIdx: practiceSectionIdx
-    }];
-    S.secScores=[0];
-    S.isSingleSection=true;
-  } else {
-    // Exam: all sections, each with subset selection
-    const seen = loadSeen();
-    S.activeSections = lv.sections.map((sec,i)=>{
-      const qs = sec.isReading
-        ? shuffleSection(sec)  // reading: shuffle passage groups
-        : pickQuestions(sec.questions, Math.min(6, sec.questions.length), seen);
-      return {
-        name: sec.name,
-        pointsEach: sec.pointsEach,
-        isReading: sec.isReading||false,
-        questions: qs,
-        _origIdx: i
-      };
-    });
-    saveSeen(seen);
-    S.secScores = lv.sections.map(()=>0);
-    S.isSingleSection=false;
-  }
-
-  showPage('pg-quiz');
-  document.getElementById('btn-home-hdr').style.display='block';
-  renderQ();
-}
 
 function startTimer(){
   const box = document.getElementById('timer');
