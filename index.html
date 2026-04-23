@@ -685,6 +685,7 @@ function clearSeenData(){ localStorage.removeItem(LS_SEEN_KEY); alert('出題履
 function goSettings(){
   showPage('pg-settings');
   document.getElementById('btn-home-hdr').style.display='block';
+  document.getElementById('hdr-badge').style.display='none';
   var k=getApiKey(); document.getElementById('inp-api-key').value=k;
   document.getElementById('inp-gh-token').value=getGhToken();
   document.getElementById('inp-gist-id').value=getGistId();
@@ -1537,6 +1538,7 @@ function goWrongPage(){
   S.returnPageId = activePage ? activePage.id : null;
   renderWrongPage();
   document.getElementById('btn-home-hdr').style.display='block';
+  document.getElementById('hdr-badge').style.display='none';
   // Show back button if we came from practice
   const backBtn = document.getElementById('btn-back-practice');
   if(backBtn) backBtn.style.display = (S.returnPageId && S.returnPageId !== 'pg-home') ? 'inline-block' : 'none';
@@ -1545,6 +1547,8 @@ function goWrongPage(){
 function backFromWrong(){
   if(S.returnPageId){
     showPage(S.returnPageId);
+    // Restore level badge if returning to a practice page (goHome handles the home case)
+    if(S.level) document.getElementById('hdr-badge').style.display='block';
   } else {
     goHome();
   }
