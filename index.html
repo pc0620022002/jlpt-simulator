@@ -2166,14 +2166,14 @@ function renderWrongList(){
       if(i===item.chosen && i!==item.answer) cls+=' wo-chosen-wrong';
       if(i===item.answer) cls+=' wo-correct';
       const expText=item.optionExplanations?item.optionExplanations[i]:'';
-      optsHtml+=`<div class="${cls}">${KEYS[i]} ${opt}<div class="wi-opt-exp">${expText}</div></div>`;
+      optsHtml+=`<div class="${cls}">${KEYS[i]} ${escHtml(opt)}<div class="wi-opt-exp">${escHtml(expText)}</div></div>`;
     });
     div.innerHTML=`<div class="wi-meta">
       <div class="wi-level" style="background:${lv.color}">${item.level}</div>
-      <div class="wi-section">${item.section} / ${item.type}</div>
+      <div class="wi-section">${escHtml(item.section)} / ${escHtml(item.type)}</div>
       <div class="wi-date">${dateStr}</div>
     </div>
-    <div class="wi-q">${item.questionText.replace(/\n/g,'<br>').replace(/<u>/g,'<u style="color:#c0392b;font-weight:700">')}</div>
+    <div class="wi-q">${escHtml(item.questionText).replace(/&lt;u&gt;/g,'<u style="color:#c0392b;font-weight:700">').replace(/&lt;\/u&gt;/g,'</u>').replace(/\n/g,'<br>')}</div>
     <div class="wi-opts">${optsHtml}</div>
     <button class="wi-del-btn" onclick="deleteWrongItem('${item.id}')">🗑 この問題を削除</button>`;
     list.appendChild(div);
