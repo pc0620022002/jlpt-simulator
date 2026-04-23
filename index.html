@@ -1729,7 +1729,7 @@ function renderQ(){
   }
 
   // question text (allow <u> tags for underline, escape everything else)
-  const qSafe = escHtml(q.text).replace(/&lt;u&gt;/g,'<u>').replace(/&lt;\/u&gt;/g,'</u>').replace(/\n/g,'<br>');
+  const qSafe = fmtQText(q.text);
   card.innerHTML += `<div class="q-text">${qSafe}</div>`;
 
   // options
@@ -1789,6 +1789,17 @@ function fmtPassage(text){
 // ══════════════════════════════════════════
 // Escape HTML to prevent broken rendering from AI-generated content
 function escHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Format question text: escape HTML first, then restore whitelisted tags/markdown.
+// uOpen lets callers customize the <u> opening tag (e.g. red-bold inline style on 錯題本 page).
+function fmtQText(text, uOpen){
+  uOpen = uOpen || '<u>';
+  return escHtml(text)
+    .replace(/&lt;u&gt;/g, uOpen)
+    .replace(/&lt;\/u&gt;/g, '</u>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
 
 function selectOpt(idx){
   var q, isCorrect, explanations;
@@ -2052,7 +2063,7 @@ function buildReview(panel){
       const ok=chosen===q.answer;
       const item=document.createElement('div');
       item.className=`review-item ${ok?'ri-ok':'ri-ng'}`;
-      var qTextSafe = escHtml(q.text).replace(/&lt;u&gt;/g,'<u>').replace(/&lt;\/u&gt;/g,'</u>').replace(/\n/g,'<br>');
+      var qTextSafe = fmtQText(q.text);
       var chosenText = chosen!==undefined ? escHtml(KEYS[chosen]+' '+q.options[chosen]) : '未回答';
       var correctText = escHtml(KEYS[q.answer]+' '+q.options[q.answer]);
       var expText = escHtml((q.optionExplanations && q.optionExplanations[q.answer]) || '');
@@ -2121,7 +2132,7 @@ function renderWrongList(){
       <div class="wi-section">${escHtml(item.section)} / ${escHtml(item.type)}</div>
       <div class="wi-date">${dateStr}</div>
     </div>
-    <div class="wi-q">${escHtml(item.questionText).replace(/&lt;u&gt;/g,'<u style="color:#c0392b;font-weight:700">').replace(/&lt;\/u&gt;/g,'</u>').replace(/\n/g,'<br>')}</div>
+    <div class="wi-q">${fmtQText(item.questionText, '<u style="color:#c0392b;font-weight:700">')}</div>
     <div class="wi-opts">${optsHtml}</div>
     <button class="wi-del-btn" onclick="deleteWrongItem('${item.id}')">🗑 この問題を削除</button>`;
     list.appendChild(div);
