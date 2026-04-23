@@ -750,14 +750,14 @@ async function testApiKey(){
         'anthropic-dangerous-direct-browser-access':'true'
       },
       body: JSON.stringify({
-        model:'claude-opus-4-6',
+        model:'claude-opus-4-7',
         max_tokens:50,
         messages:[{role:'user', content:'Say OK'}]
       })
     });
     if(resp.ok){
       el.style.color='#16a34a';
-      el.textContent='✅ 接続成功！AI出題モードが使用できます。(Model: claude-opus-4-6)';
+      el.textContent='✅ 接続成功！AI出題モードが使用できます。(Model: claude-opus-4-7)';
     } else {
       const err = await resp.text();
       el.style.color='#dc2626';
@@ -1027,7 +1027,7 @@ async function generateListeningQuiz(level){
       'anthropic-dangerous-direct-browser-access':'true'
     },
     body:JSON.stringify({
-      model:'claude-opus-4-6',
+      model:'claude-opus-4-7',
       max_tokens:4096,
       temperature:1.0,
       messages:[{role:'user',content:prompt}]
@@ -1246,7 +1246,7 @@ async function callClaudeAPI(prompt, needMoreTokens){
       'anthropic-dangerous-direct-browser-access':'true'
     },
     body: JSON.stringify({
-      model:'claude-opus-4-6',
+      model:'claude-opus-4-7',
       max_tokens: needMoreTokens ? 8192 : 4096,
       temperature:1.0,
       messages:[{role:'user', content:prompt}]
