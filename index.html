@@ -2144,7 +2144,10 @@ function renderWrongPage(){
 }
 function renderWrongList(){
   const all = loadWrong();
-  const filtered = wrongFilter==='all' ? all : all.filter(x=>x.level===wrongFilter);
+  const filtered = wrongFilter==='all' ? all.slice() : all.filter(x=>x.level===wrongFilter);
+  // Sort newest-first so order is consistent across devices regardless of sync merge order.
+  // date is an ISO string, so string comparison is chronological; missing date falls to bottom.
+  filtered.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
   const list = document.getElementById('wrong-list');
   const clearBtn = document.getElementById('btn-clear-wrong');
   list.innerHTML='';
