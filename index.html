@@ -1422,7 +1422,7 @@ var _syncTimer = null;
 function syncToGist(arr){
   if(!getGhToken()) return;
   clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(function(){ _doSyncToGist(arr); }, 2000);
+  _syncTimer = setTimeout(function(){ _doSyncToGist(arr).catch(function(){}); }, 2000);
 }
 
 async function _doSyncToGist(arr){
@@ -1433,10 +1433,11 @@ async function _doSyncToGist(arr){
   body.files[GIST_FILENAME] = { content: JSON.stringify(arr, null, 2) };
   try {
     if(gistId){
-      await fetch('https://api.github.com/gists/'+gistId, {
+      var patchResp = await fetch('https://api.github.com/gists/'+gistId, {
         method:'PATCH', headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
         body: JSON.stringify(body)
       });
+      if(!patchResp.ok){ throw new Error('Gist PATCH '+patchResp.status+': '+(await patchResp.text()).slice(0,200)); }
     } else {
       body.description = 'JLPT Simulator - Wrong Answers Sync';
       body.public = false;
@@ -1444,6 +1445,7 @@ async function _doSyncToGist(arr){
         method:'POST', headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
         body: JSON.stringify(body)
       });
+      if(!resp.ok){ throw new Error('Gist POST '+resp.status+': '+(await resp.text()).slice(0,200)); }
       var data = await resp.json();
       if(data.id){ localStorage.setItem(LS_GIST_ID, data.id); }
     }
@@ -1452,6 +1454,7 @@ async function _doSyncToGist(arr){
   } catch(e){
     console.error('[JLPT] Gist sync failed:', e);
     updateSyncStatusUI('error');
+    throw e;
   }
 }
 
@@ -1463,6 +1466,7 @@ async function pullFromGist(){
     var resp = await fetch('https://api.github.com/gists/'+gistId, {
       headers:{'Authorization':'token '+token}
     });
+    if(!resp.ok){ throw new Error('Gist GET '+resp.status+': '+(await resp.text()).slice(0,200)); }
     var data = await resp.json();
     if(data.files && data.files[GIST_FILENAME]){
       var remote = JSON.parse(data.files[GIST_FILENAME].content);
