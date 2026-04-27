@@ -821,6 +821,9 @@ const GIST_FILENAME = 'jlpt_wrong_answers.json';
 const LS_TOMBSTONE_KEY = 'jlpt_tombstones_v1';  // deleted-item IDs for cross-device delete sync
 const GIST_TOMBSTONE_FILENAME = 'jlpt_tombstones.json';
 
+// Debug 旗標 — 改成 true 才會輸出 [DEBUG] / [JLPT] log。console.error 不受影響
+const DBG = false;
+
 // ══════════════════════════════════════════
 // AI QUESTION GENERATION
 // ══════════════════════════════════════════
@@ -1140,11 +1143,11 @@ const JLPT_VOCAB_BANK = {
   }
 };
 
-// Helper: pick N random items from an array
-function pickRandom(arr, n){ return [...arr].sort(()=>Math.random()-0.5).slice(0, Math.min(n, arr.length)); }
+// Helper: pick N random items from an array (uses Fisher-Yates via shuffle())
+function pickRandom(arr, n){ return shuffle(arr).slice(0, Math.min(n, arr.length)); }
 
 function buildReadingPrompt(level, count){
-  console.log('[DEBUG] buildReadingPrompt called with level:', level, 'count:', count);
+  DBG && console.log('[DEBUG] buildReadingPrompt called with level:', level, 'count:', count);
   var themes = ['科学技術と社会','教育と子ども','仕事と働き方','環境と自然','食文化と健康','旅行と異文化理解','メディアとコミュニケーション','都市と地方の暮らし','歴史と伝統','スポーツと健康','経済とビジネス','芸術と表現'];
   var selectedThemes = pickRandom(themes, 2);
   var passageCount = Math.max(2, Math.floor(count / 2));
@@ -1353,11 +1356,11 @@ function buildAIPrompt(level, sectionName, count){
   const isVocab = sectionName === '文字・語彙';
   const isGrammar = sectionName === '文法';
   const isReading = sectionName === '読解';
-  console.log('[DEBUG] buildAIPrompt checking section:', sectionName, '— isVocab:', isVocab, 'isGrammar:', isGrammar, 'isReading:', isReading);
+  DBG && console.log('[DEBUG] buildAIPrompt checking section:', sectionName, '— isVocab:', isVocab, 'isGrammar:', isGrammar, 'isReading:', isReading);
   if(!isVocab && !isGrammar && !isReading) return null;
 
   if(isReading) {
-    console.log('[DEBUG] Section is reading comprehension, calling buildReadingPrompt');
+    DBG && console.log('[DEBUG] Section is reading comprehension, calling buildReadingPrompt');
     return buildReadingPrompt(level, count);
   }
 
@@ -1429,11 +1432,11 @@ async function callClaudeAPI(prompt, needMoreTokens){
 
 // Generate questions for a section using AI
 async function generateAIQuestions(level, sectionName, count){
-  console.log('[DEBUG] generateAIQuestions called with level:', level, 'sectionName:', sectionName, 'count:', count);
+  DBG && console.log('[DEBUG] generateAIQuestions called with level:', level, 'sectionName:', sectionName, 'count:', count);
   const isReading = sectionName === '読解';
-  console.log('[DEBUG] isReading flag:', isReading);
+  DBG && console.log('[DEBUG] isReading flag:', isReading);
   const prompt = buildAIPrompt(level, sectionName, count);
-  console.log('[DEBUG] buildAIPrompt returned:', prompt ? 'prompt string' : 'null/undefined');
+  DBG && console.log('[DEBUG] buildAIPrompt returned:', prompt ? 'prompt string' : 'null/undefined');
   if(!prompt) return null;
 
   const raw = await callClaudeAPI(prompt, isReading);
@@ -1469,7 +1472,7 @@ async function startWithAI(practiceSectionIdx){
   S.aiUsed = false; // track whether AI was actually used
 
   const useAI = hasApiKey();
-  console.log('[JLPT] startWithAI called — level:', S.level, 'useAI:', useAI, 'practiceSectionIdx:', practiceSectionIdx);
+  DBG && console.log('[JLPT] startWithAI called — level:', S.level, 'useAI:', useAI, 'practiceSectionIdx:', practiceSectionIdx);
 
   if(practiceSectionIdx!=null){
     // Single section practice
@@ -1479,9 +1482,9 @@ async function startWithAI(practiceSectionIdx){
       var aiCount = orig.isReading ? 4 : 6; // reading: 2 passages × 2 questions
       showLoading('AI問題を生成中...', S.level+' '+orig.name+' の新しい問題を作成しています');
       try{
-        console.log('[JLPT] Generating AI questions for', S.level, orig.name);
+        DBG && console.log('[JLPT] Generating AI questions for', S.level, orig.name);
         qs = await generateAIQuestions(S.level, orig.name, aiCount);
-        console.log('[JLPT] AI generation succeeded, got', qs.length, 'questions');
+        DBG && console.log('[JLPT] AI generation succeeded, got', qs.length, 'questions');
         S.aiUsed = true;
         hideLoading();
       } catch(e){
@@ -1497,7 +1500,7 @@ async function startWithAI(practiceSectionIdx){
         }
       }
     } else {
-      if(!useAI) console.log('[JLPT] No API key — using bank questions');
+      if(!useAI) DBG && console.log('[JLPT] No API key — using bank questions');
       const seen=loadSeen();
       qs = orig.isReading ? shuffleSection(orig) : pickQuestions(orig.questions, Math.min(6,orig.questions.length), seen);
       saveSeen(seen);
@@ -1581,7 +1584,17 @@ function pickQuestions(arr, n, seenSet){
 
 // localStorage helpers
 function loadWrong(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'[]'); }catch(e){ return []; } }
-function saveWrong(arr){ try{ localStorage.setItem(LS_KEY,JSON.stringify(arr)); syncToGist(arr); }catch(e){} }
+function saveWrong(arr){
+  try{ localStorage.setItem(LS_KEY,JSON.stringify(arr)); syncToGist(arr); }
+  catch(e){
+    console.error('[JLPT] saveWrong failed:', e);
+    // 一個 session 只通知一次,避免每答錯一題就跳一次
+    if(!sessionStorage.getItem('jlpt_quota_warned')){
+      sessionStorage.setItem('jlpt_quota_warned','1');
+      alert('錯題本儲存失敗。可能 localStorage 配額已滿,請到設定頁清除舊資料,或檢查瀏覽器隱私設定。');
+    }
+  }
+}
 // Tombstones: IDs of intentionally-deleted wrong answers, so delete propagates across devices
 // instead of being resurrected by the union-merge in mergeFromGist.
 function loadTombstones(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_TOMBSTONE_KEY)||'[]')); }catch(e){ return new Set(); } }
@@ -1623,7 +1636,7 @@ async function _doSyncToGist(arr){
       var data = await resp.json();
       if(data.id){ localStorage.setItem(LS_GIST_ID, data.id); }
     }
-    console.log('[JLPT] Synced wrong answers to Gist');
+    DBG && console.log('[JLPT] Synced wrong answers to Gist');
     updateSyncStatusUI('synced');
   } catch(e){
     console.error('[JLPT] Gist sync failed:', e);
@@ -1682,7 +1695,7 @@ async function mergeFromGist(){
   });
 
   localStorage.setItem(LS_KEY, JSON.stringify(merged));
-  if(added > 0) console.log('[JLPT] Merged '+added+' items from Gist');
+  if(added > 0) DBG && console.log('[JLPT] Merged '+added+' items from Gist');
 
   // Push merged state (wrongs + tombstones) back so the Gist converges
   syncToGist(merged);
@@ -2009,7 +2022,7 @@ function selectOpt(idx){
   S.answers[q.id] = idx;
   isCorrect = idx === q.answer;
   explanations = Array.isArray(q.optionExplanations) ? q.optionExplanations : [];
-  console.log('[JLPT] selectOpt:', q.id, 'mode:', S.mode, 'hasExplanations:', explanations.length, 'answer:', q.answer);
+  DBG && console.log('[JLPT] selectOpt:', q.id, 'mode:', S.mode, 'hasExplanations:', explanations.length, 'answer:', q.answer);
 
   // Mark options as correct/wrong and show inline explanations
   try{
@@ -2098,7 +2111,7 @@ function selectOpt(idx){
         document.querySelector('.wrap').appendChild(block);
       }
       setTimeout(function(){ try{ block.scrollIntoView({behavior:'smooth', block:'nearest'}); }catch(e){} }, 100);
-      console.log('[JLPT] Explanation block created OK, options:', opts.length, 'explanations:', explanations.length);
+      DBG && console.log('[JLPT] Explanation block created OK, options:', opts.length, 'explanations:', explanations.length);
     }catch(e){ console.error('[JLPT] selectOpt explanation error:', e); }
 
   // update score
